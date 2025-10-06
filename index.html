@@ -32,18 +32,32 @@
             border-color: #10b981;
         }
 
-        /* Dynamický štýl tlačidla SŤIAHNUŤ */
-        .download-btn {
-            background: linear-gradient(90deg, #10b981, #059669); /* Jemný gradient */
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.5);
-            font-weight: 700;
-        }
-        .download-btn:hover {
-            background: linear-gradient(90deg, #059669, #10b981);
-            transform: translateY(-2px);
+        /* VYLEPŠENÉ MODERNÉ TLAČIDLÁ */
+        /* Základný moderný štýl */
+        .modern-btn {
+            @apply w-full py-3 text-center text-white font-extrabold rounded-xl uppercase tracking-widest block transition duration-300 transform shadow-xl;
         }
 
+        /* SŤIAHNUŤ (Emerald/Zelená) */
+        .download-btn-modern {
+            @apply bg-emerald-600 hover:bg-emerald-500 shadow-emerald-500/50 hover:scale-[1.01] border-b-4 border-emerald-800 hover:border-emerald-600;
+        }
+
+        /* AKTUALIZÁCIA (Amber/Žltá - s pulzným efektom) */
+        .update-btn-modern {
+            @apply bg-amber-500 hover:bg-amber-400 shadow-amber-500/70 hover:scale-[1.01] border-b-4 border-amber-700 hover:border-amber-500;
+            animation: pulse-light 2s infinite;
+        }
+        @keyframes pulse-light {
+            0%, 100% { box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4); }
+            50% { box-shadow: 0 4px 25px rgba(251, 191, 36, 0.8); }
+        }
+
+        /* NAINŠTALOVANÉ (Šedá/Neaktívna) */
+        .installed-btn-modern {
+            @apply bg-gray-700 text-gray-400 cursor-not-allowed shadow-inner shadow-gray-900 border-b-2 border-gray-900 opacity-75;
+        }
+        
         /* Gradient pre Banner */
         #main-banner {
             background: linear-gradient(135deg, #1f2937, #111827);
@@ -90,6 +104,12 @@
         #message-modal-container {
             transition: opacity 0.3s ease;
         }
+        
+        /* Štýl pre rýchlosť sťahovania v zozname */
+        .download-speed-text {
+            @apply text-sm font-extrabold text-indigo-400 bg-indigo-900/50 rounded-lg px-2 py-0.5 shadow-md;
+        }
+
     </style>
 </head>
 <body class="min-h-screen">
@@ -252,7 +272,7 @@
         </div>
     </div>
 
-    <!-- MODAL PRE SLEDOVANIE SŤAHOVANIA (Nezmenený) -->
+    <!-- MODAL PRE SLEDOVANIE SŤAHOVANIA (AKTUALIZOVANÝ) -->
     <div id="download-modal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden" onclick="toggleDownloadModal()">
         <div class="bg-gray-800 rounded-xl shadow-2xl w-full max-w-xl mx-4 p-6 relative border border-emerald-700" onclick="event.stopPropagation()">
             <button class="absolute top-4 right-4 text-gray-400 hover:text-white" onclick="toggleDownloadModal()">
@@ -304,6 +324,7 @@
         const STORAGE_KEY_DOWNLOADED = 'downloadedGames';
         const STORAGE_KEY_UPDATE_TIME = 'codBiaLastUpdate';
         const COD_BIA_TITLE = "Call of Duty: Brothers in Arms";
+        const UPDATE_SIZE_DISPLAY = "39.20 GB";
         const UPDATE_SIZE_MB = 40141; // 39.20 GB * 1024 = 40140.8 -> zaokrúhlené na celé MB
         const UPDATE_INTERVAL_DAYS = 4;
 
@@ -470,14 +491,14 @@
             
             // Ak uplynulo viac ako 4 dni od poslednej aktualizácie, je k dispozícii nová
             if ((now - lastUpdateTime) > fourDaysMs) {
-                return { isAvailable: true, updateSizeMB: UPDATE_SIZE_MB, updateSizeDisplay: "39.20 GB" };
+                return { isAvailable: true, updateSizeMB: UPDATE_SIZE_MB, updateSizeDisplay: UPDATE_SIZE_DISPLAY };
             }
             
             return { isAvailable: false };
         }
 
 
-        // --- NÁHRADA ZA ALERT() A CONFIRM() (Nezmenené) ---
+        // --- NÁHRADA ZA ALERT() A CONFIRM() (Nezmenený) ---
         
         function showMessage(title, message, callback = null) {
             const container = document.getElementById('message-modal-container');
@@ -642,15 +663,14 @@
         
         // --- POMOCNÉ FUNKCIE PRE SŤAHOVANIE ---
 
-        function formatSize(sizeMB) {
-            const sizeGB = sizeMB / 1024;
-            if (sizeGB >= 1) {
-                // Zaokrúhlenie na 2 desatinné miesta pre GB
-                return `${sizeGB.toFixed(2)} GB`; 
-            } else {
-                // Zaokrúhlenie na 1 desatinné miesto pre MB
-                return `${Math.max(0, sizeMB).toFixed(1)} MB`; 
+        // Funkcia pre formátovanie aktuálne stiahnutého progresu (MB/GB)
+        function formatCurrentProgress(sizeMB) {
+            // Ak je to menej ako 1 GB (1024 MB), zobrazí sa v MB s 1 desatinným miestom
+            if (sizeMB < 1024) {
+                return `${Math.max(0, sizeMB).toFixed(1)} MB`;
             }
+            // Ak 1 GB alebo viac, zobrazí sa v GB s 2 desatinnými miestami
+            return `${(sizeMB / 1024).toFixed(2)} GB`;
         }
 
         function formatTime(seconds) {
@@ -719,14 +739,20 @@
             const mbPerInterval = currentSpeed * (UPDATE_INTERVAL_MS / 1000);
             
             // Určenie správnej celkovej veľkosti sťahovania (použije sa buď veľkosť hry, alebo veľkosť updatu)
-            const defaultGameSizeMB = game.isUpdate ? game.sizeMB : gamesData.find(d => d.title === game.title).sizeMB;
-            const sizeTotalDisplay = game.isUpdate ? game.size : game.sizeTotalDisplay;
+            const totalGameData = gamesData.find(d => d.title === game.title);
+            
+            const sizeTotalMB = game.isUpdate ? game.sizeMB : totalGameData.sizeMB;
+            const sizeTotalDisplay = totalGameData.size; // Vždy berieme GB z dát pre celkovú veľkosť
+            
+            // Konverzia celkovej veľkosti do GB pre zobrazenie
+            const totalSizeInGB = (sizeTotalMB / 1024).toFixed(2) + ' GB';
+
 
             const downloadItem = {
                 id: downloadId,
                 title: game.title,
-                sizeTotalMB: defaultGameSizeMB, 
-                sizeTotalDisplay: sizeTotalDisplay,
+                sizeTotalMB: sizeTotalMB, 
+                sizeTotalDisplay: totalSizeInGB, // Použijeme formát GB pre celkovú veľkosť
                 downloadUrl: game.downloadUrl,
                 platform: game.platform,
                 speed: currentSpeed, 
@@ -751,6 +777,8 @@
                 const remainingMB = downloadItem.sizeTotalMB - downloadItem.progressMB;
                 // Ochrana pred delením nulou alebo záporným číslom
                 const remainingTimeSeconds = remainingMB > 0 ? remainingMB / downloadItem.speed : 0; 
+                
+                const currentSpeedText = `${downloadItem.speed.toFixed(1)} MB/s`;
 
                 if (downloadItem.progressPercent >= 100) {
                     clearInterval(downloadItem.interval);
@@ -791,11 +819,17 @@
                     const progressText = downloadItem.element.querySelector('.progress-text');
                     const sizeText = downloadItem.element.querySelector('.size-text');
                     const timeText = downloadItem.element.querySelector('.time-text');
+                    const speedDisplay = downloadItem.element.querySelector('.speed-display'); // Nový element
+
+                    const progressFormatted = formatCurrentProgress(downloadItem.progressMB);
 
                     progressBarFill.style.width = `${downloadItem.progressPercent}%`;
                     progressText.textContent = `${downloadItem.progressPercent.toFixed(1)}%`;
                     
-                    sizeText.textContent = `${formatSize(downloadItem.progressMB)} / ${downloadItem.sizeTotalDisplay}`;
+                    // Aplikovanie nového formátu: [Aktuálny MB/GB] / [Celkový GB]
+                    sizeText.textContent = `${progressFormatted} / ${downloadItem.sizeTotalDisplay}`; 
+                    
+                    speedDisplay.textContent = currentSpeedText; // Aktualizácia rýchlosti
                     
                     if (downloadItem.progressPercent < 100) {
                         timeText.textContent = `Zostáva: ${formatTime(remainingTimeSeconds)}`;
@@ -818,32 +852,38 @@
 
             globalState.activeDownloads.forEach(item => {
                 const div = document.createElement('div');
-                div.className = 'bg-gray-700 p-4 rounded-lg shadow-md';
+                div.className = 'bg-gray-700 p-4 rounded-xl shadow-lg border border-emerald-600/30';
                 
-                const speedDisplay = item.platform.includes('PC') ? 'PC/Kábel' : 'Mobilná Sieť';
+                // Vypočítame formátovaný progres
+                const progressFormatted = formatCurrentProgress(item.progressMB);
+                const currentSpeedText = `${item.speed.toFixed(1)} MB/s`;
 
                 div.innerHTML = `
-                    <p class="font-bold text-white mb-2">${item.title} ${item.isUpdate ? '(Aktualizácia)' : ''}</p>
+                    <p class="font-extrabold text-white mb-2 tracking-wide">${item.title} ${item.isUpdate ? '(Aktualizácia)' : ''}</p>
                     <div class="relative pt-1">
+                        
                         <!-- Riadok 1: Rýchlosť a Percentá -->
-                        <div class="flex items-center justify-between mb-1 text-sm">
-                            <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-emerald-600 bg-emerald-200">
-                                $${item.speed}\,MB/s$ (${speedDisplay})
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="speed-display download-speed-text">
+                                ${currentSpeedText}
                             </span>
-                            <span class="progress-text font-bold text-emerald-400">
+                            <span class="progress-text font-extrabold text-emerald-400">
                                 ${item.progressPercent.toFixed(1)}%
                             </span>
                         </div>
                         
                         <!-- Progress Bar -->
-                        <div class="overflow-hidden h-2 mb-3 text-xs flex rounded bg-gray-600">
-                            <div style="width:${item.progressPercent}%" class="progress-bar-fill shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-emerald-500 transition-all duration-300"></div>
+                        <div class="overflow-hidden h-3 mb-3 text-xs flex rounded-full bg-gray-600 shadow-inner">
+                            <div style="width:${item.progressPercent}%" class="progress-bar-fill shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-emerald-500 transition-all duration-300 rounded-full"></div>
                         </div>
 
                         <!-- Riadok 2: Veľkosť a Zostávajúci Čas -->
-                        <div class="flex items-center justify-between text-xs text-gray-400 font-medium">
-                            <span class="size-text">${formatSize(item.progressMB)} / ${item.sizeTotalDisplay}</span>
-                            <span class="time-text">Načítavam ETA...</span>
+                        <div class="flex items-center justify-between text-sm text-gray-400 font-medium">
+                            <!-- Nový formát: Aktuálne MB/GB / Celkové GB -->
+                            <span class="size-text text-white font-bold">
+                                ${progressFormatted} / ${item.sizeTotalDisplay}
+                            </span>
+                            <span class="time-text text-xs text-gray-400">Načítavam ETA...</span>
                         </div>
 
                     </div>
@@ -869,7 +909,7 @@
             const gameStatus = downloadedGames[game.title];
 
             let buttonText = "STIAHNUŤ";
-            let buttonClass = "download-btn";
+            let buttonClass = "modern-btn download-btn-modern"; // Moderná trieda pre SŤIAHNUŤ
             let sizeDisplay = game.size;
             let downloadInfo = {
                 title: game.title,
@@ -889,7 +929,7 @@
             // 1. Kontrola, či je hra nainštalovaná
             if (gameStatus && gameStatus.installed) {
                 buttonText = "NAINŠTALOVANÉ";
-                buttonClass = "w-full py-3 text-center text-white font-bold rounded-full uppercase tracking-widest block bg-gray-600 cursor-not-allowed";
+                buttonClass = "modern-btn installed-btn-modern"; // Moderná trieda pre NAINŠTALOVANÉ
                 buttonAction = `showMessage('Status Hry', 'Hra je už nainštalovaná (simulácia).', null)`;
                 updateText = `<p class="text-xs text-center text-emerald-400 mt-2 font-bold">Inštalácia dokončená. ✅</p>`;
 
@@ -898,7 +938,7 @@
                     const updateInfo = checkForUpdate(game.title);
                     if (updateInfo.isAvailable) {
                         buttonText = `AKTUALIZÁCIA (${updateInfo.updateSizeDisplay})`;
-                        buttonClass = "download-btn w-full py-3 text-center text-white font-bold rounded-full uppercase tracking-widest block bg-yellow-600 hover:bg-yellow-500";
+                        buttonClass = "modern-btn update-btn-modern"; // Moderná trieda pre AKTUALIZÁCIA
                         sizeDisplay = updateInfo.updateSizeDisplay;
                         
                         downloadInfo = {
@@ -911,16 +951,7 @@
                         };
                         buttonAction = `startSimulatedDownload(${JSON.stringify(downloadInfo).replace(/"/g, "'")})`;
                         
-                        // Zobrazenie času zostávajúceho do 4 dní, ak update ešte nie je k dispozícii
-                        const lastUpdate = getCoDBiaLastUpdateTime();
-                        const nextUpdateTime = lastUpdate + (UPDATE_INTERVAL_DAYS * 24 * 60 * 60 * 1000);
-                        const timeUntilNext = (nextUpdateTime - Date.now()) / 1000;
-
-                        if (timeUntilNext > 0) {
-                             updateText = `<p class="text-xs text-center text-yellow-500 mt-2 font-bold">🚨 Vyžaduje sa povinná aktualizácia!</p>`;
-                        } else {
-                            updateText = `<p class="text-xs text-center text-yellow-500 mt-2 font-bold">🚨 Vyžaduje sa povinná aktualizácia!</p>`;
-                        }
+                        updateText = `<p class="text-xs text-center text-amber-300 mt-2 font-bold">🚨 K dispozícii povinná aktualizácia!</p>`;
                     }
                 }
             } else {
@@ -992,6 +1023,8 @@
     </script>
 </body>
 </html>
+
+
 
 
 
