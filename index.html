@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sťahovanie Mobilných Hier - NEXUS Pro</title>
+    <title>Sťahovanie Mobilných a PC Hier - NEXUS Pro</title>
     <!-- Web Ikona (Favicon) - Používame Emoji pre jednoduchú implementáciu -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎮</text></svg>">
     
@@ -125,7 +125,7 @@
         <div id="main-banner" class="p-8 sm:p-10 rounded-xl shadow-2xl mb-16">
             <h2 class="text-5xl font-extrabold mb-3 text-white tracking-tight">Vitajte, Hráč.</h2>
             <p id="welcome-message" class="text-indigo-200 text-xl font-light">
-                Najväčšia knižnica overených herných súborov pre **Android a iOS**. Sťahujte rýchlo a bezpečne s najnovšími verziami.
+                Najväčšia knižnica overených herných súborov pre **Android, iOS a PC**. Sťahujte rýchlo a bezpečne.
             </p>
         </div>
 
@@ -150,7 +150,7 @@
         </div>
     </footer>
 
-    <!-- MODAL PRE PRIHLÁSENIE / REGISTRÁCIU -->
+    <!-- MODAL PRE PRIHLÁSENIE / REGISTRÁCIU (Nezmenený) -->
     <div id="auth-modal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden" onclick="closeAuthModal()">
         <div class="bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg mx-4 p-8 relative border border-indigo-700" onclick="event.stopPropagation()">
             <button class="absolute top-4 right-4 text-gray-400 hover:text-white" onclick="closeAuthModal()">
@@ -252,7 +252,7 @@
         </div>
     </div>
 
-    <!-- MODAL PRE SLEDOVANIE SŤAHOVANIA -->
+    <!-- MODAL PRE SLEDOVANIE SŤAHOVANIA (Nezmenený) -->
     <div id="download-modal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden" onclick="toggleDownloadModal()">
         <div class="bg-gray-800 rounded-xl shadow-2xl w-full max-w-xl mx-4 p-6 relative border border-emerald-700" onclick="event.stopPropagation()">
             <button class="absolute top-4 right-4 text-gray-400 hover:text-white" onclick="toggleDownloadModal()">
@@ -267,7 +267,7 @@
         </div>
     </div>
     
-    <!-- MODAL PRE ZOBRAZOVANIE SPRÁV (Náhrada za alert()) -->
+    <!-- MODAL PRE ZOBRAZOVANIE SPRÁV (Náhrada za alert()) - Nezmenený -->
     <div id="message-modal-container" class="fixed inset-0 bg-black bg-opacity-70 z-[100] flex items-center justify-center opacity-0 pointer-events-none" onclick="hideMessage()">
         <div id="message-modal-content" class="bg-gray-800 rounded-xl shadow-2xl w-full max-w-sm mx-4 p-6 relative border border-indigo-500 transform scale-95 transition-all duration-300" onclick="event.stopPropagation()">
             <h4 id="message-title" class="text-2xl font-bold mb-3 text-indigo-400">Titulok</h4>
@@ -306,18 +306,93 @@
         }
 
         // Dáta pre zoznam hier (SizeMB pridané pre presné výpočty)
+        // AKTUALIZOVANÉ DÁTA S REÁLNYMI LINKAMI A FORTNITE
         const gamesData = [
-            { title: "Call of Duty: Mobile", description: "Klasický FPS zážitok...", platform: "Android", size: "2.1 GB", sizeMB: 2150, downloadUrl: "https://example.com/cod_mobile_download_link" , iconColor: "red" },
-            { title: "Genshin Impact", description: "Epické fantasy RPG...", platform: "iOS & Android", size: "20.5 GB", sizeMB: 20500, downloadUrl: "https://example.com/genshin_impact_download_link", iconColor: "indigo" },
-            { title: "Clash Royale", description: "Strategická kartová hra...", platform: "iOS & Android", size: "250 MB", sizeMB: 250, downloadUrl: "https://example.com/clash_royale_download_link", iconColor: "yellow" },
-            { title: "Subway Surfers", description: "Nekonečný bežec...", platform: "Android", size: "150 MB", sizeMB: 150, downloadUrl: "https://example.com/subway_surfers_download_link", iconColor: "pink" },
-            { title: "Minecraft Pocket", description: "Tvorba a prieskum...", platform: "iOS", size: "500 MB", sizeMB: 500, downloadUrl: "https://example.com/minecraft_download_link", iconColor: "green" },
-            { title: "PUBG Mobile", description: "Battle Royale pre 100 hráčov...", platform: "Android", size: "1.8 GB", sizeMB: 1800, downloadUrl: "https://example.com/pubg_mobile_download_link", iconColor: "red" },
-            { title: "Asphalt 9: Legends", description: "Adrenalínové preteky...", platform: "iOS & Android", size: "3.5 GB", sizeMB: 3500, downloadUrl: "https://example.com/asphalt9_download_link", iconColor: "indigo" },
-            { title: "Candy Crush Saga", description: "Legendárna logická hra...", platform: "Android", size: "120 MB", sizeMB: 120, downloadUrl: "https://example.com/candy_crush_download_link", iconColor: "yellow" }
+            // PC HRA (Fortnite)
+            { 
+                title: "Fortnite", 
+                description: "Globálna Battle Royale PC senzácia! Po dokončení sťahovania budete presmerovaný do Epic Games Store.", 
+                platform: "PC / Epic Games", 
+                size: "99.58 GB", 
+                sizeMB: 99580, // Prepočítané na MB (99.58 * 1024)
+                downloadUrl: "https://store.epicgames.com/sk/p/fortnite", 
+                iconColor: "red",
+                icon: "💻" 
+            },
+            // MOBILNÉ HRY (Google Play linky)
+            { 
+                title: "Call of Duty: Mobile", 
+                description: "Klasický FPS zážitok s rôznymi režimami pre Android/iOS. Link vedie na Google Play.", 
+                platform: "Android", 
+                size: "2.1 GB", 
+                sizeMB: 2150, 
+                downloadUrl: "https://play.google.com/store/apps/details?id=com.activision.callofduty.shooter" , 
+                iconColor: "indigo",
+                icon: "🎮"
+            },
+            { 
+                title: "Genshin Impact", 
+                description: "Epické fantasy RPG s otvoreným svetom. Po sťahovaní prejdite do obchodu Play.", 
+                platform: "iOS & Android", 
+                size: "20.5 GB", 
+                sizeMB: 20500, 
+                downloadUrl: "https://play.google.com/store/apps/details?id=com.miHoYo.GenshinImpact", 
+                iconColor: "red",
+                icon: "📱"
+            },
+            { 
+                title: "Clash Royale", 
+                description: "Strategická kartová hra 1v1 v reálnom čase. Link vedie na Google Play.", 
+                platform: "iOS & Android", 
+                size: "250 MB", 
+                sizeMB: 250, 
+                downloadUrl: "https://play.google.com/store/apps/details?id=com.supercell.clashroyale", 
+                iconColor: "yellow",
+                icon: "📱"
+            },
+            { 
+                title: "Subway Surfers", 
+                description: "Nekonečný bežec po koľajach v New Yorku. Link vedie na Google Play.", 
+                platform: "Android", 
+                size: "150 MB", 
+                sizeMB: 150, 
+                downloadUrl: "https://play.google.com/store/apps/details?id=com.kiloo.subwaysurfers", 
+                iconColor: "pink",
+                icon: "🎮"
+            },
+            { 
+                title: "Minecraft Pocket", 
+                description: "Tvorba, prieskum a prežitie vo svete kociek. Link vedie na Google Play.", 
+                platform: "iOS & Android", 
+                size: "500 MB", 
+                sizeMB: 500, 
+                downloadUrl: "https://play.google.com/store/apps/details?id=com.mojang.minecraftpe", 
+                iconColor: "green",
+                icon: "📱"
+            },
+            { 
+                title: "PUBG Mobile", 
+                description: "Battle Royale pre 100 hráčov. Link vedie na Google Play.", 
+                platform: "Android", 
+                size: "1.8 GB", 
+                sizeMB: 1800, 
+                downloadUrl: "https://play.google.com/store/apps/details?id=com.tencent.ig", 
+                iconColor: "red",
+                icon: "🎮"
+            },
+            { 
+                title: "Asphalt 9: Legends", 
+                description: "Adrenalínové preteky s luxusnými autami. Link vedie na Google Play.", 
+                platform: "iOS & Android", 
+                size: "3.5 GB", 
+                sizeMB: 3500, 
+                downloadUrl: "https://play.google.com/store/apps/details?id=com.gameloft.android.ANMP.GloftA9HM", 
+                iconColor: "indigo",
+                icon: "📱"
+            },
         ];
 
-        // --- NÁHRADA ZA ALERT() A CONFIRM() ---
+        // --- NÁHRADA ZA ALERT() A CONFIRM() (Nezmenené) ---
         
         function showMessage(title, message, callback = null) {
             const container = document.getElementById('message-modal-container');
@@ -347,7 +422,7 @@
             }, 300);
         }
 
-        // --- AUTHENTIFIKÁCIA A REGISTRÁCIA (NEZMENENÉ) ---
+        // --- AUTHENTIFIKÁCIA A REGISTRÁCIA (Nezmenené) ---
         
         function handleLogout() {
             globalState.isLoggedIn = false;
@@ -376,7 +451,7 @@
                 authBtn.className = 'px-5 py-2 bg-indigo-600 text-white font-semibold rounded-full shadow-lg shadow-indigo-600/50 hover:bg-indigo-500 transition duration-300 transform hover:scale-105';
                 authBtn.textContent = 'Prihlásiť sa / Register';
                 authBtn.onclick = () => openAuthModal('login');
-                welcomeMsg.innerHTML = 'Najväčšia knižnica overených herných súborov pre **Android a iOS**. Sťahujte rýchlo a bezpečne s najnovšími verziami.';
+                welcomeMsg.innerHTML = 'Najväčšia knižnica overených herných súborov pre **Android, iOS a PC**. Sťahujte rýchlo a bezpečne.';
             }
         }
 
@@ -480,12 +555,13 @@
         // --- POMOCNÉ FUNKCIE PRE SŤAHOVANIE ---
 
         function formatSize(sizeMB) {
-            if (sizeMB < 1024) {
-                // Zaokrúhlenie na 1 desatinné miesto
-                return `${Math.max(0, sizeMB).toFixed(1)} MB`; 
+            const sizeGB = sizeMB / 1024;
+            if (sizeGB >= 1) {
+                // Zaokrúhlenie na 2 desatinné miesta pre GB
+                return `${sizeGB.toFixed(2)} GB`; 
             } else {
-                // Zaokrúhlenie na 2 desatinné miesta
-                return `${(Math.max(0, sizeMB) / 1024).toFixed(2)} GB`;
+                // Zaokrúhlenie na 1 desatinné miesto pre MB
+                return `${Math.max(0, sizeMB).toFixed(1)} MB`; 
             }
         }
 
@@ -558,6 +634,7 @@
                 sizeTotalMB: game.sizeMB,
                 sizeTotalDisplay: game.size,
                 downloadUrl: game.downloadUrl,
+                platform: game.platform,
                 speed: currentSpeed, // Uložíme rýchlosť, aby sme ju mohli zobraziť
                 progressMB: 0, 
                 progressPercent: 0, 
@@ -588,10 +665,19 @@
                     updateDownloadTracker();
                     renderDownloadList();
 
-                    // Otvorenie skutočného odkazu na stiahnutie v novej karte, ako si žiadal
+                    let successMessage = `Sťahovanie hry '${game.title}' je hotové!`;
+                    let isPcGame = game.platform.includes('PC');
+                    
+                    if(isPcGame) {
+                         successMessage += " Otvára sa Váš sťahovací odkaz do Epic Games Store. Nainštalujte hru odtiaľ.";
+                    } else {
+                         successMessage += " Otvára sa Váš sťahovací odkaz do Google Play/App Store. Nainštalujte hru priamo z neho.";
+                    }
+
+                    // Otvorenie skutočného odkazu na stiahnutie v novej karte
                     window.open(downloadItem.downloadUrl, '_blank');
                     
-                    showMessage('Sťahovanie Dokončené', `Sťahovanie hry '${game.title}' je hotové! Otvára sa Váš sťahovací odkaz: ${downloadItem.downloadUrl}`, () => {
+                    showMessage('Sťahovanie Dokončené', successMessage, () => {
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                     });
 
@@ -631,13 +717,16 @@
             globalState.activeDownloads.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'bg-gray-700 p-4 rounded-lg shadow-md';
+                
+                const speedDisplay = isMobileDevice() ? 'Mobilná Sieť' : 'PC/Kábel';
+
                 div.innerHTML = `
                     <p class="font-bold text-white mb-2">${item.title}</p>
                     <div class="relative pt-1">
                         <!-- Riadok 1: Rýchlosť a Percentá -->
                         <div class="flex items-center justify-between mb-1 text-sm">
                             <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-emerald-600 bg-emerald-200">
-                                $${item.speed}\,MB/s$ (${isMobileDevice() ? 'Mobilná Sieť' : 'PC/Kábel'})
+                                $${item.speed}\,MB/s$ (${speedDisplay})
                             </span>
                             <span class="progress-text font-bold text-emerald-400">
                                 ${item.progressPercent.toFixed(1)}%
@@ -662,16 +751,25 @@
             });
         }
 
-        // --- VYKRESLENIE KARIET (NEZMENENÉ) ---
+        // --- VYKRESLENIE KARIET ---
+
+        function getPlatformIcon(platform) {
+            if (platform.includes('PC')) return '💻';
+            if (platform.includes('Android') || platform.includes('iOS')) return '📱';
+            return '🎮'; // Default
+        }
 
         function createGameCard(game) {
+            const icon = game.icon || getPlatformIcon(game.platform);
+            const isPcGame = game.platform.includes('PC');
+            
             return `
                 <div class="card-hover bg-gray-800 rounded-xl p-6 shadow-xl transition duration-300 border flex flex-col justify-between">
                     <!-- Hlava Karty (Ikona a Názov) -->
                     <div class="flex items-start space-x-4 mb-4">
                         <!-- Vylepšený, dynamický kontajner pre ikonu -->
                         <div class="w-14 h-14 flex-shrink-0 flex items-center justify-center bg-gray-900 rounded-xl text-white font-black text-2xl shadow-inner border border-${game.iconColor}-600/50">
-                            ${game.platform.includes('iOS') ? '📱' : '🎮'} 
+                            ${icon} 
                         </div>
                         <div>
                             <h4 class="text-2xl font-bold text-white">${game.title}</h4>
@@ -688,11 +786,13 @@
                     </div>
 
                     <!-- Tlačidlo Sťahovania s gradientom (teraz volá JS funkciu) -->
-                    <button onclick="startSimulatedDownload({title: '${game.title}', size: '${game.size}', sizeMB: ${game.sizeMB}, downloadUrl: '${game.downloadUrl}'})"
+                    <button onclick="startSimulatedDownload({title: '${game.title}', size: '${game.size}', sizeMB: ${game.sizeMB}, downloadUrl: '${game.downloadUrl}', platform: '${game.platform}'})"
                        class="download-btn w-full py-3 text-center text-white font-bold rounded-full uppercase tracking-widest block">
                         STIAHNUŤ
                     </button>
-                    <p class="text-xs text-center text-gray-500 mt-2">Priamy link. Overené a bezpečné.</p>
+                    <p class="text-xs text-center text-gray-500 mt-2">
+                        ${isPcGame ? 'Po sťahovaní: Presmerovanie na Epic Games Store.' : 'Po sťahovaní: Presmerovanie na Google Play.'}
+                    </p>
                 </div>
             `;
         }
@@ -724,5 +824,6 @@
     </script>
 </body>
 </html>
+
 
 
