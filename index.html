@@ -211,7 +211,7 @@
                 </form>
             </div>
 
-            <!-- 3. REGISTRÁCIA FORM (Krok 2: Prieskum Obľúbených Hier) -->
+            <!-- 3. REGISTRÁCIA FORM (Krok 2: Prieskum Obľúbených HIER) -->
             <div id="register-step2-view" class="auth-view hidden">
                 <h3 class="text-3xl font-bold mb-6 text-indigo-400">Krok 2/2: Čo Vás Baví?</h3>
                 <form onsubmit="handleRegisterStep2(event)">
@@ -292,16 +292,29 @@
             activeDownloads: [],
         };
         
-        // Definovanie dát pre zoznam hier (rovnaké ako predtým)
+        // --- KONŠTANTY PRE SIMULÁCIU ---
+        
+        // Rýchlosti sťahovania v MB/s
+        const DESKTOP_SPEED = 2.0; // Pomalšia rýchlosť pre PC (napr. stará DSL)
+        const MOBILE_SPEED = 8.0;  // Rýchlejšia rýchlosť pre mobil (napr. 4G/5G)
+        const UPDATE_INTERVAL_MS = 500;
+        let SIMULATED_SPEED_MB_PER_SECOND = DESKTOP_SPEED; // Predvolená rýchlosť
+        
+        // Funkcia na detekciu mobilného zariadenia
+        function isMobileDevice() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
+        // Dáta pre zoznam hier (SizeMB pridané pre presné výpočty)
         const gamesData = [
-            { title: "Call of Duty: Mobile", description: "Klasický FPS zážitok...", platform: "Android", size: "2.1 GB", downloadUrl: "CoD.apk", iconColor: "red" },
-            { title: "Genshin Impact", description: "Epické fantasy RPG...", platform: "iOS & Android", size: "20.5 GB", downloadUrl: "Genshin.zip", iconColor: "indigo" },
-            { title: "Clash Royale", description: "Strategická kartová hra...", platform: "iOS & Android", size: "250 MB", downloadUrl: "Clash.ipa", iconColor: "yellow" },
-            { title: "Subway Surfers", description: "Nekonečný bežec...", platform: "Android", size: "150 MB", downloadUrl: "Subway.apk", iconColor: "pink" },
-            { title: "Minecraft Pocket", description: "Tvorba a prieskum...", platform: "iOS", size: "500 MB", downloadUrl: "Minecraft.ipa", iconColor: "green" },
-            { title: "PUBG Mobile", description: "Battle Royale pre 100 hráčov...", platform: "Android", size: "1.8 GB", downloadUrl: "PUBG.apk", iconColor: "red" },
-            { title: "Asphalt 9: Legends", description: "Adrenalínové preteky...", platform: "iOS & Android", size: "3.5 GB", downloadUrl: "Asphalt.zip", iconColor: "indigo" },
-            { title: "Candy Crush Saga", description: "Legendárna logická hra...", platform: "Android", size: "120 MB", downloadUrl: "Candy.apk", iconColor: "yellow" }
+            { title: "Call of Duty: Mobile", description: "Klasický FPS zážitok...", platform: "Android", size: "2.1 GB", sizeMB: 2150, downloadUrl: "https://example.com/cod_mobile_download_link" , iconColor: "red" },
+            { title: "Genshin Impact", description: "Epické fantasy RPG...", platform: "iOS & Android", size: "20.5 GB", sizeMB: 20500, downloadUrl: "https://example.com/genshin_impact_download_link", iconColor: "indigo" },
+            { title: "Clash Royale", description: "Strategická kartová hra...", platform: "iOS & Android", size: "250 MB", sizeMB: 250, downloadUrl: "https://example.com/clash_royale_download_link", iconColor: "yellow" },
+            { title: "Subway Surfers", description: "Nekonečný bežec...", platform: "Android", size: "150 MB", sizeMB: 150, downloadUrl: "https://example.com/subway_surfers_download_link", iconColor: "pink" },
+            { title: "Minecraft Pocket", description: "Tvorba a prieskum...", platform: "iOS", size: "500 MB", sizeMB: 500, downloadUrl: "https://example.com/minecraft_download_link", iconColor: "green" },
+            { title: "PUBG Mobile", description: "Battle Royale pre 100 hráčov...", platform: "Android", size: "1.8 GB", sizeMB: 1800, downloadUrl: "https://example.com/pubg_mobile_download_link", iconColor: "red" },
+            { title: "Asphalt 9: Legends", description: "Adrenalínové preteky...", platform: "iOS & Android", size: "3.5 GB", sizeMB: 3500, downloadUrl: "https://example.com/asphalt9_download_link", iconColor: "indigo" },
+            { title: "Candy Crush Saga", description: "Legendárna logická hra...", platform: "Android", size: "120 MB", sizeMB: 120, downloadUrl: "https://example.com/candy_crush_download_link", iconColor: "yellow" }
         ];
 
         // --- NÁHRADA ZA ALERT() A CONFIRM() ---
@@ -334,8 +347,7 @@
             }, 300);
         }
 
-
-        // --- AUTHENTIFIKÁCIA A REGISTRÁCIA ---
+        // --- AUTHENTIFIKÁCIA A REGISTRÁCIA (NEZMENENÉ) ---
         
         function handleLogout() {
             globalState.isLoggedIn = false;
@@ -356,7 +368,7 @@
                 const skinClass = `skin-${globalState.userProfile.skin}`;
                 authBtn.className = `px-5 py-2 text-white font-bold rounded-full transition duration-300 uppercase shadow-lg border-2 ${skinClass} bg-gray-900`;
                 authBtn.textContent = `Odhlásiť sa (${globalState.userProfile.nickname})`;
-                authBtn.onclick = () => handleLogout(); // Nová funkcia pre odhlásenie
+                authBtn.onclick = () => handleLogout(); 
 
                 welcomeMsg.innerHTML = `Vitajte späť, **${globalState.userProfile.nickname}**! Váš ${globalState.userProfile.skin} skin je aktívny. Tu sú najlepšie hry pre vás.`;
 
@@ -377,7 +389,7 @@
         function closeAuthModal() {
             document.getElementById('auth-modal').classList.add('hidden');
             document.getElementById('login-error').classList.add('hidden');
-            showAuthView('login'); // Reset na login
+            showAuthView('login'); 
         }
 
         function showAuthView(id) {
@@ -387,7 +399,6 @@
             if (targetElement) {
                 targetElement.classList.remove('hidden');
             } else {
-                // Toto sa už nemalo stať po oprave, ale pre istotu
                 console.error(`Chyba: Nebol nájdený pohľad s ID: ${id}-view`);
                 showMessage('Chyba Aplikácie', 'Došlo k chybe pri prepínaní formulárov.');
             }
@@ -398,13 +409,11 @@
             const nickname = document.getElementById('login-nickname').value.trim();
             
             if (localStorage.getItem('user_nickname') === nickname) {
-                // Skutočné prihlásenie po registrácii
                 globalState.isLoggedIn = true;
                 globalState.userProfile.nickname = nickname;
                 globalState.userProfile.skin = localStorage.getItem('user_skin');
                 globalState.userProfile.genres = JSON.parse(localStorage.getItem('user_genres') || '[]');
                 
-                // Uloženie statusu prihlásenia
                 localStorage.setItem('user_isLoggedIn', 'true'); 
 
                 closeAuthModal();
@@ -429,7 +438,6 @@
             globalState.userProfile.nickname = nickname;
             globalState.userProfile.skin = skinElement.value;
 
-            // Uloženie dát a prechod na krok 2
             showAuthView('register-step2');
         }
 
@@ -438,17 +446,14 @@
             const genres = Array.from(document.querySelectorAll('input[name="genre"]:checked')).map(el => el.value);
             globalState.userProfile.genres = genres;
             
-            // Uloženie REGISTRAČNÝCH dát do prehliadača (persistence)
             localStorage.setItem('user_nickname', globalState.userProfile.nickname);
             localStorage.setItem('user_skin', globalState.userProfile.skin);
             localStorage.setItem('user_genres', JSON.stringify(genres));
-            localStorage.setItem('user_isLoggedIn', 'true'); // Pri registrácii je automaticky prihlásený
+            localStorage.setItem('user_isLoggedIn', 'true'); 
 
-            // Zobrazenie Welcome Screen a animácie
             document.getElementById('welcome-nickname').textContent = globalState.userProfile.nickname;
             showAuthView('welcome');
             
-            // Simulácia 2-sekundového načítania a automatické presmerovanie (zavretie modalu)
             setTimeout(() => {
                 globalState.isLoggedIn = true;
                 closeAuthModal();
@@ -456,13 +461,11 @@
             }, 2000);
         }
 
-        // Event listener pre 3D skiny na hover/klik (Zostáva nezmenený)
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('input[name="profile_skin"]').forEach(radio => {
                 const skinSpan = radio.nextElementSibling;
                 const skinClass = skinSpan.getAttribute('data-skin-class');
                 
-                // Zvýraznenie vybraného skinu
                 radio.addEventListener('change', () => {
                     document.querySelectorAll('input[name="profile_skin"]').forEach(r => {
                         r.nextElementSibling.classList.remove('ring-4', 'ring-offset-2', 'ring-offset-gray-800', r.nextElementSibling.getAttribute('data-skin-class'));
@@ -474,7 +477,33 @@
             });
         });
         
-        // --- SŤAHOVANIE A SLEDOVAČ ---
+        // --- POMOCNÉ FUNKCIE PRE SŤAHOVANIE ---
+
+        function formatSize(sizeMB) {
+            if (sizeMB < 1024) {
+                // Zaokrúhlenie na 1 desatinné miesto
+                return `${Math.max(0, sizeMB).toFixed(1)} MB`; 
+            } else {
+                // Zaokrúhlenie na 2 desatinné miesta
+                return `${(Math.max(0, sizeMB) / 1024).toFixed(2)} GB`;
+            }
+        }
+
+        function formatTime(seconds) {
+            const secs = Math.ceil(seconds);
+            if (secs < 0) return `Dokončené`;
+            if (secs < 60) return `${secs} sekúnd`;
+            if (secs < 3600) return `${Math.floor(secs / 60)} min ${Math.ceil(secs % 60)} sekúnd`;
+            return `${Math.floor(secs / 3600)} hod ${Math.floor((secs % 3600) / 60)} min`;
+        }
+
+
+        // --- SŤAHOVANIE A SLEDOVAČ (AKTUALIZOVANÉ) ---
+        
+        function getCurrentDownloadSpeed() {
+             // Zisťujeme, akú rýchlosť máme použiť (Mobilná vs. Desktop)
+             return isMobileDevice() ? MOBILE_SPEED : DESKTOP_SPEED;
+        }
 
         function updateDownloadTracker() {
             const count = globalState.activeDownloads.length;
@@ -500,7 +529,6 @@
             modal.classList.toggle('hidden');
             modal.classList.toggle('flex');
             
-            // Aktualizácia stavu No Downloads pri otvorení
             document.getElementById('no-downloads').classList.toggle('hidden', globalState.activeDownloads.length > 0);
         }
 
@@ -511,14 +539,30 @@
                  return;
             }
 
+            // Kontrola, či už sťahovanie neprebieha
+            if (globalState.activeDownloads.some(d => d.title === game.title)) {
+                showMessage('Už prebieha', `Sťahovanie hry '${game.title}' už je aktívne. Skontrolujte sledovač sťahovania.`, toggleDownloadModal);
+                return;
+            }
+            
+            // Určenie aktuálnej rýchlosti pre túto reláciu sťahovania
+            const currentSpeed = getCurrentDownloadSpeed(); 
+
             const downloadId = Date.now();
+            // Prírastok stiahnutých MB za jeden interval (500ms)
+            const mbPerInterval = currentSpeed * (UPDATE_INTERVAL_MS / 1000);
+            
             const downloadItem = {
                 id: downloadId,
                 title: game.title,
-                size: game.size,
-                progress: 0,
-                status: 'Sťahuje sa...',
-                element: null // Bude držať HTML element pre aktualizáciu
+                sizeTotalMB: game.sizeMB,
+                sizeTotalDisplay: game.size,
+                downloadUrl: game.downloadUrl,
+                speed: currentSpeed, // Uložíme rýchlosť, aby sme ju mohli zobraziť
+                progressMB: 0, 
+                progressPercent: 0, 
+                interval: null, 
+                element: null 
             };
 
             globalState.activeDownloads.push(downloadItem);
@@ -526,40 +570,53 @@
             renderDownloadList();
             
             // --- Logika Simulovaného Sťahovania ---
-            let progress = 0;
-            const interval = setInterval(() => {
-                progress += Math.floor(Math.random() * 15) + 5; // Rýchlejší priebeh
+            downloadItem.interval = setInterval(() => {
                 
-                if (progress >= 100) {
-                    clearInterval(interval);
-                    downloadItem.progress = 100;
-                    downloadItem.status = 'Hotovo. Súbor otvorený.';
+                downloadItem.progressMB += mbPerInterval;
+                downloadItem.progressPercent = Math.min(100, (downloadItem.progressMB / downloadItem.sizeTotalMB) * 100);
+                
+                // Vypočet zostávajúcich dát a času
+                const remainingMB = downloadItem.sizeTotalMB - downloadItem.progressMB;
+                const remainingTimeSeconds = remainingMB / downloadItem.speed;
+
+                if (downloadItem.progressPercent >= 100) {
+                    clearInterval(downloadItem.interval);
                     
-                    // Odstránenie po 2 sekundách a notifikácia o presmerovaní
-                    setTimeout(() => {
-                        const index = globalState.activeDownloads.findIndex(d => d.id === downloadId);
-                        if (index !== -1) globalState.activeDownloads.splice(index, 1);
-                        updateDownloadTracker();
-                        renderDownloadList();
-                        
-                        // Simulované presmerovanie/dokončenie a návrat do shopu
-                        showMessage('Sťahovanie Dokončené', `Sťahovanie hry '${game.title}' je dokončené. Presúvate sa späť do obchodu.`, () => {
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                        });
+                    // Dokončenie a presmerovanie
+                    const index = globalState.activeDownloads.findIndex(d => d.id === downloadId);
+                    if (index !== -1) globalState.activeDownloads.splice(index, 1);
+                    updateDownloadTracker();
+                    renderDownloadList();
 
-                    }, 2000);
+                    // Otvorenie skutočného odkazu na stiahnutie v novej karte, ako si žiadal
+                    window.open(downloadItem.downloadUrl, '_blank');
+                    
+                    showMessage('Sťahovanie Dokončené', `Sťahovanie hry '${game.title}' je hotové! Otvára sa Váš sťahovací odkaz: ${downloadItem.downloadUrl}`, () => {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    });
 
-                } else {
-                    downloadItem.progress = Math.min(progress, 100);
                 }
                 
                 // Aktualizácia UI
                 if (downloadItem.element) {
-                    downloadItem.element.querySelector('.progress-bar-fill').style.width = `${downloadItem.progress}%`;
-                    downloadItem.element.querySelector('.progress-text').textContent = `${downloadItem.progress}% - ${downloadItem.status}`;
+                    const progressBarFill = downloadItem.element.querySelector('.progress-bar-fill');
+                    const progressText = downloadItem.element.querySelector('.progress-text');
+                    const sizeText = downloadItem.element.querySelector('.size-text');
+                    const timeText = downloadItem.element.querySelector('.time-text');
+
+                    progressBarFill.style.width = `${downloadItem.progressPercent}%`;
+                    progressText.textContent = `${downloadItem.progressPercent.toFixed(1)}%`;
+                    
+                    sizeText.textContent = `${formatSize(downloadItem.progressMB)} / ${downloadItem.sizeTotalDisplay}`;
+                    
+                    if (downloadItem.progressPercent < 100) {
+                        timeText.textContent = `Zostáva: ${formatTime(remainingTimeSeconds)}`;
+                    } else {
+                        timeText.textContent = `Dokončené`;
+                    }
                 }
 
-            }, 500); // Každých 0.5 sekundy
+            }, UPDATE_INTERVAL_MS);
         }
 
         function renderDownloadList() {
@@ -575,19 +632,29 @@
                 const div = document.createElement('div');
                 div.className = 'bg-gray-700 p-4 rounded-lg shadow-md';
                 div.innerHTML = `
-                    <p class="font-bold text-white mb-2">${item.title} (${item.size})</p>
+                    <p class="font-bold text-white mb-2">${item.title}</p>
                     <div class="relative pt-1">
-                        <div class="flex mb-2 items-center justify-between">
+                        <!-- Riadok 1: Rýchlosť a Percentá -->
+                        <div class="flex items-center justify-between mb-1 text-sm">
                             <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-emerald-600 bg-emerald-200">
-                                Sťahovanie...
+                                $${item.speed}\,MB/s$ (${isMobileDevice() ? 'Mobilná Sieť' : 'PC/Kábel'})
                             </span>
-                            <span class="progress-text text-xs font-semibold inline-block text-emerald-400">
-                                ${item.progress}% - ${item.status}
+                            <span class="progress-text font-bold text-emerald-400">
+                                ${item.progressPercent.toFixed(1)}%
                             </span>
                         </div>
-                        <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-gray-600">
-                            <div style="width:${item.progress}%" class="progress-bar-fill shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-emerald-500 transition-all duration-500"></div>
+                        
+                        <!-- Progress Bar -->
+                        <div class="overflow-hidden h-2 mb-3 text-xs flex rounded bg-gray-600">
+                            <div style="width:${item.progressPercent}%" class="progress-bar-fill shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-emerald-500 transition-all duration-300"></div>
                         </div>
+
+                        <!-- Riadok 2: Veľkosť a Zostávajúci Čas -->
+                        <div class="flex items-center justify-between text-xs text-gray-400 font-medium">
+                            <span class="size-text">${formatSize(item.progressMB)} / ${item.sizeTotalDisplay}</span>
+                            <span class="time-text">Načítavam ETA...</span>
+                        </div>
+
                     </div>
                 `;
                 item.element = div;
@@ -595,7 +662,7 @@
             });
         }
 
-        // --- VYKRESLENIE KARIET ---
+        // --- VYKRESLENIE KARIET (NEZMENENÉ) ---
 
         function createGameCard(game) {
             return `
@@ -621,7 +688,7 @@
                     </div>
 
                     <!-- Tlačidlo Sťahovania s gradientom (teraz volá JS funkciu) -->
-                    <button onclick="startSimulatedDownload({title: '${game.title}', size: '${game.size}', downloadUrl: '${game.downloadUrl}'})"
+                    <button onclick="startSimulatedDownload({title: '${game.title}', size: '${game.size}', sizeMB: ${game.sizeMB}, downloadUrl: '${game.downloadUrl}'})"
                        class="download-btn w-full py-3 text-center text-white font-bold rounded-full uppercase tracking-widest block">
                         STIAHNUŤ
                     </button>
@@ -633,6 +700,9 @@
         // --- INICIALIZÁCIA ---
 
         document.addEventListener('DOMContentLoaded', () => {
+            // Nastavenie rýchlosti sťahovania na základe zariadenia pri spustení
+            SIMULATED_SPEED_MB_PER_SECOND = getCurrentDownloadSpeed();
+            
             const gameGrid = document.getElementById('game-grid');
             
             // Vytvorenie kariet hier
@@ -640,7 +710,6 @@
             gameGrid.innerHTML = gameCardsHTML;
 
             // Kontrola prehliadača pri štarte (persistence)
-            // Kontrolujeme, či existujú registračné dáta A status prihlásenia
             const isRegistered = localStorage.getItem('user_nickname');
             const isSessionActive = localStorage.getItem('user_isLoggedIn') === 'true';
 
@@ -655,3 +724,5 @@
     </script>
 </body>
 </html>
+
+
