@@ -300,14 +300,31 @@
         const UPDATE_INTERVAL_MS = 500;
         let SIMULATED_SPEED_MB_PER_SECOND = DESKTOP_SPEED; // Predvolená rýchlosť
         
+        // Konštanty pre perzistenciu (localStorage)
+        const STORAGE_KEY_DOWNLOADED = 'downloadedGames';
+        const STORAGE_KEY_UPDATE_TIME = 'codBiaLastUpdate';
+        const COD_BIA_TITLE = "Call of Duty: Brothers in Arms";
+        const UPDATE_SIZE_MB = 40141; // 39.20 GB * 1024 = 40140.8 -> zaokrúhlené na celé MB
+        const UPDATE_INTERVAL_DAYS = 4;
+
         // Funkcia na detekciu mobilného zariadenia
         function isMobileDevice() {
             return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         }
 
         // Dáta pre zoznam hier (SizeMB pridané pre presné výpočty)
-        // AKTUALIZOVANÉ DÁTA S REÁLNYMI LINKAMI A FORTNITE
         const gamesData = [
+            // NOVÁ HRA: Call of Duty: Brothers in Arms (Roblox)
+            {
+                title: COD_BIA_TITLE,
+                description: "Multiplayerová akčná hra inšpirovaná CoD, vyvinutá v prostredí Roblox. Vyžaduje klienta Roblox a sťahuje 38.12 GB.",
+                platform: "PC / Mobile / Roblox",
+                size: "38.12 GB",
+                sizeMB: 39037, // 38.12 * 1024 = 39037.44
+                downloadUrl: "https://www.roblox.com/games/96397696911846/Call-of-Duty-Brothers-in-Arms",
+                iconColor: "purple",
+                icon: "🧱" // Roblox brick icon
+            },
             // PC HRA (Fortnite)
             { 
                 title: "Fortnite", 
@@ -392,6 +409,74 @@
             },
         ];
 
+        // --- MANAŽMENT LOKÁLNEHO ÚLOŽISKA (PERSISTENCIA) ---
+
+        function getDownloadedGames() {
+            try {
+                const stored = localStorage.getItem(STORAGE_KEY_DOWNLOADED);
+                return stored ? JSON.parse(stored) : {};
+            } catch (e) {
+                console.error("Chyba pri čítaní stiahnutých hier z localStorage", e);
+                return {};
+            }
+        }
+
+        // Uloží/aktualizuje stav nainštalovanej hry
+        function saveDownloadedGame(gameTitle, isInstalled = true) {
+            const games = getDownloadedGames();
+            games[gameTitle] = {
+                installed: isInstalled,
+                installationDate: Date.now()
+            };
+            localStorage.setItem(STORAGE_KEY_DOWNLOADED, JSON.stringify(games));
+        }
+
+        // Ukladá čas poslednej aktualizácie pre CoD:BiA
+        function setCoDBiaLastUpdateTime(timeMs) {
+            localStorage.setItem(STORAGE_KEY_UPDATE_TIME, timeMs.toString());
+        }
+
+        function getCoDBiaLastUpdateTime() {
+            const timeStr = localStorage.getItem(STORAGE_KEY_UPDATE_TIME);
+            return timeStr ? parseInt(timeStr, 10) : 0;
+        }
+
+        // --- LOGIKA AKTUALIZÁCIE ---
+
+        function checkForUpdate(gameTitle) {
+            if (gameTitle !== COD_BIA_TITLE) {
+                return { isAvailable: false };
+            }
+
+            const downloadedGames = getDownloadedGames();
+            const status = downloadedGames[COD_BIA_TITLE];
+            
+            // Ak hra nie je nainštalovaná, nemôže mať update
+            if (!status || !status.installed) {
+                return { isAvailable: false };
+            }
+
+            const lastUpdateTime = getCoDBiaLastUpdateTime();
+            const now = Date.now();
+            
+            // 4 dni v milisekundách
+            const fourDaysMs = UPDATE_INTERVAL_DAYS * 24 * 60 * 60 * 1000;
+            
+            // Ak neexistuje čas poslednej aktualizácie (ale hra je nainštalovaná), nastavíme čas inštalácie
+            if (lastUpdateTime === 0) {
+                setCoDBiaLastUpdateTime(status.installationDate || now);
+                return { isAvailable: false };
+            }
+            
+            // Ak uplynulo viac ako 4 dni od poslednej aktualizácie, je k dispozícii nová
+            if ((now - lastUpdateTime) > fourDaysMs) {
+                return { isAvailable: true, updateSizeMB: UPDATE_SIZE_MB, updateSizeDisplay: "39.20 GB" };
+            }
+            
+            return { isAvailable: false };
+        }
+
+
         // --- NÁHRADA ZA ALERT() A CONFIRM() (Nezmenené) ---
         
         function showMessage(title, message, callback = null) {
@@ -433,6 +518,7 @@
 
             updateAuthUI();
             showMessage('Odhlásenie', 'Boli ste úspešne odhlásený.', null);
+            renderGameCards(); // Aktualizácia kariet po odhlásení (užívateľ nemôže sťahovať)
         }
 
         function updateAuthUI() {
@@ -493,6 +579,7 @@
 
                 closeAuthModal();
                 updateAuthUI();
+                renderGameCards(); // Aktualizácia kariet po prihlásení
             }
             else {
                 document.getElementById('login-error').textContent = `Užívateľ '${nickname}' nenájdený. Prosím, zaregistrujte sa, alebo zadajte správnu prezývku.`;
@@ -533,6 +620,7 @@
                 globalState.isLoggedIn = true;
                 closeAuthModal();
                 updateAuthUI();
+                renderGameCards(); // Aktualizácia kariet po registrácii
             }, 2000);
         }
 
@@ -606,6 +694,7 @@
             modal.classList.toggle('flex');
             
             document.getElementById('no-downloads').classList.toggle('hidden', globalState.activeDownloads.length > 0);
+            renderDownloadList(); // Zabezpečí, že zoznam je aktuálny pri otvorení
         }
 
         function startSimulatedDownload(game) {
@@ -615,9 +704,10 @@
                  return;
             }
 
-            // Kontrola, či už sťahovanie neprebieha
+            // Kontrola, či už sťahovanie neprebieha (aktualizácia vs. plná hra)
+            const downloadType = game.isUpdate ? "aktualizácia" : "plná inštalácia";
             if (globalState.activeDownloads.some(d => d.title === game.title)) {
-                showMessage('Už prebieha', `Sťahovanie hry '${game.title}' už je aktívne. Skontrolujte sledovač sťahovania.`, toggleDownloadModal);
+                showMessage('Už prebieha', `Sťahovanie ${downloadType} hry '${game.title}' už je aktívne. Skontrolujte sledovač sťahovania.`, toggleDownloadModal);
                 return;
             }
             
@@ -628,14 +718,19 @@
             // Prírastok stiahnutých MB za jeden interval (500ms)
             const mbPerInterval = currentSpeed * (UPDATE_INTERVAL_MS / 1000);
             
+            // Určenie správnej celkovej veľkosti sťahovania (použije sa buď veľkosť hry, alebo veľkosť updatu)
+            const defaultGameSizeMB = game.isUpdate ? game.sizeMB : gamesData.find(d => d.title === game.title).sizeMB;
+            const sizeTotalDisplay = game.isUpdate ? game.size : game.sizeTotalDisplay;
+
             const downloadItem = {
                 id: downloadId,
                 title: game.title,
-                sizeTotalMB: game.sizeMB,
-                sizeTotalDisplay: game.size,
+                sizeTotalMB: defaultGameSizeMB, 
+                sizeTotalDisplay: sizeTotalDisplay,
                 downloadUrl: game.downloadUrl,
                 platform: game.platform,
-                speed: currentSpeed, // Uložíme rýchlosť, aby sme ju mohli zobraziť
+                speed: currentSpeed, 
+                isUpdate: game.isUpdate,
                 progressMB: 0, 
                 progressPercent: 0, 
                 interval: null, 
@@ -654,31 +749,38 @@
                 
                 // Vypočet zostávajúcich dát a času
                 const remainingMB = downloadItem.sizeTotalMB - downloadItem.progressMB;
-                const remainingTimeSeconds = remainingMB / downloadItem.speed;
+                // Ochrana pred delením nulou alebo záporným číslom
+                const remainingTimeSeconds = remainingMB > 0 ? remainingMB / downloadItem.speed : 0; 
 
                 if (downloadItem.progressPercent >= 100) {
                     clearInterval(downloadItem.interval);
                     
-                    // Dokončenie a presmerovanie
+                    // Odstránenie z aktívnych sťahovaní
                     const index = globalState.activeDownloads.findIndex(d => d.id === downloadId);
                     if (index !== -1) globalState.activeDownloads.splice(index, 1);
                     updateDownloadTracker();
                     renderDownloadList();
 
+                    // --- PERZISTENCIA STAVU ---
                     let successMessage = `Sťahovanie hry '${game.title}' je hotové!`;
-                    let isPcGame = game.platform.includes('PC');
                     
-                    if(isPcGame) {
-                         successMessage += " Otvára sa Váš sťahovací odkaz do Epic Games Store. Nainštalujte hru odtiaľ.";
+                    if (game.isUpdate) {
+                        setCoDBiaLastUpdateTime(Date.now());
+                        saveDownloadedGame(game.title, true); 
+                        successMessage = `Aktualizácia (${downloadItem.sizeTotalDisplay}) hry '${game.title}' je hotová!`;
                     } else {
-                         successMessage += " Otvára sa Váš sťahovací odkaz do Google Play/App Store. Nainštalujte hru priamo z neho.";
+                        saveDownloadedGame(game.title, true);
+                        if (game.title === COD_BIA_TITLE) {
+                             setCoDBiaLastUpdateTime(Date.now());
+                        }
                     }
 
                     // Otvorenie skutočného odkazu na stiahnutie v novej karte
-                    window.open(downloadItem.downloadUrl, '_blank');
+                    window.open(game.downloadUrl, '_blank');
                     
-                    showMessage('Sťahovanie Dokončené', successMessage, () => {
+                    showMessage('Sťahovanie Dokončené', successMessage + " Otvára sa Váš sťahovací odkaz pre inštaláciu.", () => {
                         window.scrollTo({ top: 0, behavior: 'smooth' });
+                        renderGameCards(); // Dôležité: Aktualizácia kariet po dokončení inštalácie
                     });
 
                 }
@@ -721,7 +823,7 @@
                 const speedDisplay = item.platform.includes('PC') ? 'PC/Kábel' : 'Mobilná Sieť';
 
                 div.innerHTML = `
-                    <p class="font-bold text-white mb-2">${item.title}</p>
+                    <p class="font-bold text-white mb-2">${item.title} ${item.isUpdate ? '(Aktualizácia)' : ''}</p>
                     <div class="relative pt-1">
                         <!-- Riadok 1: Rýchlosť a Percentá -->
                         <div class="flex items-center justify-between mb-1 text-sm">
@@ -763,6 +865,72 @@
             const icon = game.icon || getPlatformIcon(game.platform);
             const isPcGame = game.platform.includes('PC');
             
+            const downloadedGames = getDownloadedGames();
+            const gameStatus = downloadedGames[game.title];
+
+            let buttonText = "STIAHNUŤ";
+            let buttonClass = "download-btn";
+            let sizeDisplay = game.size;
+            let downloadInfo = {
+                title: game.title,
+                size: game.size,
+                sizeMB: game.sizeMB,
+                downloadUrl: game.downloadUrl,
+                platform: game.platform,
+                isUpdate: false
+            };
+            let buttonAction = `startSimulatedDownload(${JSON.stringify(downloadInfo).replace(/"/g, "'")})`;
+            let updateText = `
+                <p class="text-xs text-center text-gray-500 mt-2">
+                    ${isPcGame ? 'Po sťahovaní: Presmerovanie na obchod.' : 'Po sťahovaní: Presmerovanie na obchod Play.'}
+                </p>
+            `;
+            
+            // 1. Kontrola, či je hra nainštalovaná
+            if (gameStatus && gameStatus.installed) {
+                buttonText = "NAINŠTALOVANÉ";
+                buttonClass = "w-full py-3 text-center text-white font-bold rounded-full uppercase tracking-widest block bg-gray-600 cursor-not-allowed";
+                buttonAction = `showMessage('Status Hry', 'Hra je už nainštalovaná (simulácia).', null)`;
+                updateText = `<p class="text-xs text-center text-emerald-400 mt-2 font-bold">Inštalácia dokončená. ✅</p>`;
+
+                // 2. Kontrola, či hra potrebuje aktualizáciu (len CoD:BiA)
+                if (game.title === COD_BIA_TITLE) {
+                    const updateInfo = checkForUpdate(game.title);
+                    if (updateInfo.isAvailable) {
+                        buttonText = `AKTUALIZÁCIA (${updateInfo.updateSizeDisplay})`;
+                        buttonClass = "download-btn w-full py-3 text-center text-white font-bold rounded-full uppercase tracking-widest block bg-yellow-600 hover:bg-yellow-500";
+                        sizeDisplay = updateInfo.updateSizeDisplay;
+                        
+                        downloadInfo = {
+                            title: game.title,
+                            size: updateInfo.updateSizeDisplay,
+                            sizeMB: updateInfo.updateSizeMB,
+                            downloadUrl: game.downloadUrl,
+                            platform: game.platform,
+                            isUpdate: true
+                        };
+                        buttonAction = `startSimulatedDownload(${JSON.stringify(downloadInfo).replace(/"/g, "'")})`;
+                        
+                        // Zobrazenie času zostávajúceho do 4 dní, ak update ešte nie je k dispozícii
+                        const lastUpdate = getCoDBiaLastUpdateTime();
+                        const nextUpdateTime = lastUpdate + (UPDATE_INTERVAL_DAYS * 24 * 60 * 60 * 1000);
+                        const timeUntilNext = (nextUpdateTime - Date.now()) / 1000;
+
+                        if (timeUntilNext > 0) {
+                             updateText = `<p class="text-xs text-center text-yellow-500 mt-2 font-bold">🚨 Vyžaduje sa povinná aktualizácia!</p>`;
+                        } else {
+                            updateText = `<p class="text-xs text-center text-yellow-500 mt-2 font-bold">🚨 Vyžaduje sa povinná aktualizácia!</p>`;
+                        }
+                    }
+                }
+            } else {
+                 // Ak nie je prihlásený, nastavíme default akciu na požiadavku prihlásenia
+                 if (!globalState.isLoggedIn) {
+                    buttonAction = `showMessage('Chyba Sťahovania', 'Prosím, prihláste sa alebo sa zaregistrujte, aby ste mohli sťahovať hry.')`;
+                 }
+            }
+
+
             return `
                 <div class="card-hover bg-gray-800 rounded-xl p-6 shadow-xl transition duration-300 border flex flex-col justify-between">
                     <!-- Hlava Karty (Ikona a Názov) -->
@@ -782,19 +950,24 @@
                     
                     <div class="flex justify-between items-center mb-5 border-t border-gray-700 pt-3">
                         <span class="font-bold text-indigo-400 text-sm">VEĽKOSŤ SÚBORU:</span>
-                        <span class="text-lg font-extrabold text-emerald-400">${game.size}</span>
+                        <span class="text-lg font-extrabold text-emerald-400">${sizeDisplay}</span>
                     </div>
 
                     <!-- Tlačidlo Sťahovania s gradientom (teraz volá JS funkciu) -->
-                    <button onclick="startSimulatedDownload({title: '${game.title}', size: '${game.size}', sizeMB: ${game.sizeMB}, downloadUrl: '${game.downloadUrl}', platform: '${game.platform}'})"
-                       class="download-btn w-full py-3 text-center text-white font-bold rounded-full uppercase tracking-widest block">
-                        STIAHNUŤ
+                    <button onclick="${buttonAction}"
+                       class="${buttonClass}">
+                        ${buttonText}
                     </button>
-                    <p class="text-xs text-center text-gray-500 mt-2">
-                        ${isPcGame ? 'Po sťahovaní: Presmerovanie na Epic Games Store.' : 'Po sťahovaní: Presmerovanie na Google Play.'}
-                    </p>
+                    ${updateText}
                 </div>
             `;
+        }
+        
+        // Funkcia pre vykreslenie kariet (použitá pri štarte a po dokončení sťahovania)
+        function renderGameCards() {
+            const gameGrid = document.getElementById('game-grid');
+            const updatedCardsHTML = gamesData.map(createGameCard).join('');
+            gameGrid.innerHTML = updatedCardsHTML;
         }
 
         // --- INICIALIZÁCIA ---
@@ -803,12 +976,6 @@
             // Nastavenie rýchlosti sťahovania na základe zariadenia pri spustení
             SIMULATED_SPEED_MB_PER_SECOND = getCurrentDownloadSpeed();
             
-            const gameGrid = document.getElementById('game-grid');
-            
-            // Vytvorenie kariet hier
-            const gameCardsHTML = gamesData.map(createGameCard).join('');
-            gameGrid.innerHTML = gameCardsHTML;
-
             // Kontrola prehliadača pri štarte (persistence)
             const isRegistered = localStorage.getItem('user_nickname');
             const isSessionActive = localStorage.getItem('user_isLoggedIn') === 'true';
@@ -820,10 +987,12 @@
                 globalState.userProfile.genres = JSON.parse(localStorage.getItem('user_genres') || '[]');
             }
             updateAuthUI();
+            renderGameCards(); // Prvotné vykreslenie kariet s aktuálnym stavom inštalácie
         });
     </script>
 </body>
 </html>
+
 
 
 
