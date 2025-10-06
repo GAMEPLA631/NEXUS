@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sťahovanie Mobilných Hier - NEXUS Pro</title>
+    <!-- Web Ikona (Favicon) - Používame Emoji pre jednoduchú implementáciu -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎮</text></svg>">
+    
+    <!-- Načítanie Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Konfigurácia písma a farieb pre moderný tmavý, futuristický vzhľad */
+        :root {
+            --primary-color: #4f46e5; /* Indigo */
+            --accent-color: #10b981; /* Emerald Green */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* Extra tmavé pozadie */
+            color: #e5e7eb; /* Svetlejší text */
+        }
+        
+        /* Vylepšený efekt pre karty (Subtle Glow on Hover) */
+        .card-hover {
+            transition: all 0.3s ease-in-out;
+            border: 1px solid #374151; /* Jemný neutrálny okraj */
+        }
+        .card-hover:hover {
+            transform: scale(1.02);
+            box-shadow: 0 10px 40px rgba(16, 185, 129, 0.1), 0 0 10px rgba(16, 185, 129, 0.5); /* Emerald Glow */
+            border-color: #10b981;
+        }
+
+        /* Dynamický štýl tlačidla SŤIAHNUŤ */
+        .download-btn {
+            background: linear-gradient(90deg, #10b981, #059669); /* Jemný gradient */
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.5);
+            font-weight: 700;
+        }
+        .download-btn:hover {
+            background: linear-gradient(90deg, #059669, #10b981);
+            transform: translateY(-2px);
+        }
+
+        /* Gradient pre Banner */
+        #main-banner {
+            background: linear-gradient(135deg, #1f2937, #111827);
+            border-left: 5px solid #4f46e5;
+        }
+
+        /* Styling pre 3D Skiny (Efekty žiary) */
+        .skin-fire { box-shadow: 0 0 10px #f87171; border-color: #ef4444; }
+        .skin-ice { box-shadow: 0 0 10px #60a5fa; border-color: #3b82f6; }
+        .skin-cyber { box-shadow: 0 0 10px #a78bfa; border-color: #8b5cf6; }
+
+        /* CSS pre animovaný kruh (Welcome Screen) */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .loader {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid var(--accent-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        
+        /* Sledovač Sťahovania */
+        #download-tracker {
+            position: fixed;
+            top: 1.5rem;
+            right: 1.5rem;
+            z-index: 60;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .tracker-active {
+            animation: pulse-glow 1.5s infinite;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 10px var(--accent-color); }
+            50% { box-shadow: 0 0 20px var(--accent-color), 0 0 40px rgba(16, 185, 129, 0.5); }
+        }
+        
+        /* Message Modal Style */
+        #message-modal-container {
+            transition: opacity 0.3s ease;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <!-- Sledovač Sťahovania (V pravom hornom rohu) -->
+    <div id="download-tracker" class="p-3 bg-indigo-600 rounded-full shadow-xl hidden" onclick="toggleDownloadModal()">
+        <!-- SVG ikona šípky nadol -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+        <span id="download-count" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">0</span>
+    </div>
+
+    <!-- Navigačný Panel (Header) -->
+    <header class="sticky top-0 z-50 bg-gray-900/95 backdrop-blur-sm shadow-2xl border-b border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center py-4">
+            <!-- Logo / Názov Portálu -->
+            <h1 class="text-3xl font-black tracking-wider text-indigo-400">
+                <span class="text-emerald-400">NEXUS</span> DOWNLOADS<span class="text-lg font-medium text-gray-500 ml-1">PRO</span>
+            </h1>
+
+            <!-- Prihlásenie / Profil Tlačidlo -->
+            <button id="auth-btn" class="px-5 py-2 bg-indigo-600 text-white font-semibold rounded-full shadow-lg shadow-indigo-600/50 hover:bg-indigo-500 transition duration-300 transform hover:scale-105" onclick="openAuthModal('login')">
+                Prihlásiť sa / Register
+            </button>
+        </div>
+    </header>
+
+    <!-- Hlavný Obsah - Katalóg Hier -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+
+        <!-- Banner / Úvodná Správa -->
+        <div id="main-banner" class="p-8 sm:p-10 rounded-xl shadow-2xl mb-16">
+            <h2 class="text-5xl font-extrabold mb-3 text-white tracking-tight">Vitajte, Hráč.</h2>
+            <p id="welcome-message" class="text-indigo-200 text-xl font-light">
+                Najväčšia knižnica overených herných súborov pre **Android a iOS**. Sťahujte rýchlo a bezpečne s najnovšími verziami.
+            </p>
+        </div>
+
+        <!-- Sekcia Odporúčaných Hier -->
+        <section id="featured-games" class="mb-12">
+            <h3 class="text-3xl font-bold mb-10 border-l-4 border-emerald-400 pl-4 text-gray-200">
+                <span class="text-emerald-400">🚀</span> Odporúčané & Najsťahovanejšie
+            </h3>
+            
+            <div id="game-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-8">
+                <!-- Miesto pre Karty Hier -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Pätička -->
+    <footer class="bg-gray-900 border-t border-gray-700 mt-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-gray-500">
+            <p class="text-sm">&copy; 2025 NEXUS Mobile Pro. Všetky práva vyhradené.</p>
+            <p class="text-xs mt-1 opacity-70">Demo sťahovanie: Simulované pre demonštráciu funkčnosti. Pre reálne súbory použite vlastné URL.</p>
+        </div>
+    </footer>
+
+    <!-- MODAL PRE PRIHLÁSENIE / REGISTRÁCIU -->
+    <div id="auth-modal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden" onclick="closeAuthModal()">
+        <div class="bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg mx-4 p-8 relative border border-indigo-700" onclick="event.stopPropagation()">
+            <button class="absolute top-4 right-4 text-gray-400 hover:text-white" onclick="closeAuthModal()">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            
+            <!-- 1. LOGIN FORM -->
+            <div id="login-view" class="auth-view">
+                <h3 class="text-3xl font-bold mb-6 text-indigo-400">Prihlásenie do NEXUS</h3>
+                <form onsubmit="handleLogin(event)">
+                    <input type="text" id="login-nickname" class="w-full p-3 mb-4 bg-gray-700 rounded-lg border border-gray-600 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Zadajte svoju prezývku" required>
+                    <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition duration-300">
+                        Prihlásiť sa
+                    </button>
+                </form>
+                <p class="mt-4 text-center text-gray-400">
+                    Ešte nemáte účet? <a href="#" onclick="openAuthModal('register-step1', event)" class="text-indigo-400 hover:underline font-semibold">Registrovať sa</a>
+                </p>
+                <p id="login-error" class="text-red-400 text-center mt-3 hidden">Neplatná prezývka. Prosím, zaregistrujte sa.</p>
+            </div>
+
+            <!-- 2. REGISTRÁCIA FORM (Krok 1: Prezývka a Logo/Skin) -->
+            <div id="register-step1-view" class="auth-view hidden">
+                <h3 class="text-3xl font-bold mb-6 text-indigo-400">Krok 1/2: Vytvorte si Profil</h3>
+                <form onsubmit="handleRegisterStep1(event)">
+                    <div class="mb-5">
+                        <label for="reg-nickname" class="block mb-2 font-semibold text-gray-300">Prezývka (Nickname)</label>
+                        <input type="text" id="reg-nickname" class="w-full p-3 bg-gray-700 rounded-lg border border-gray-600 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Vyberte si prezývku (min. 3 znaky)" minlength="3" required>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block mb-3 font-semibold text-gray-300">Vyberte si 3D Profilový Skin/Logo:</label>
+                        <div class="flex justify-around space-x-3">
+                            <!-- Skiny: Oheň, Ľad, Cyber -->
+                            <label class="cursor-pointer">
+                                <input type="radio" name="profile_skin" value="fire" class="hidden" required>
+                                <span class="block text-center p-4 rounded-lg bg-gray-900 border-2 border-transparent transition duration-200 hover:border-red-500 text-2xl" data-skin-class="skin-fire">
+                                    🔥 <br><span class="text-sm">Oheň</span>
+                                </span>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="profile_skin" value="ice" class="hidden">
+                                <span class="block text-center p-4 rounded-lg bg-gray-900 border-2 border-transparent transition duration-200 hover:border-blue-500 text-2xl" data-skin-class="skin-ice">
+                                    ❄️ <br><span class="text-sm">Ľad</span>
+                                </span>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="profile_skin" value="cyber" class="hidden">
+                                <span class="block text-center p-4 rounded-lg bg-gray-900 border-2 border-transparent transition duration-200 hover:border-purple-500 text-2xl" data-skin-class="skin-cyber">
+                                    ⚛️ <br><span class="text-sm">Cyber</span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg transition duration-300">
+                        Pokračovať
+                    </button>
+                </form>
+            </div>
+
+            <!-- 3. REGISTRÁCIA FORM (Krok 2: Prieskum Obľúbených Hier) -->
+            <div id="register-step2-view" class="auth-view hidden">
+                <h3 class="text-3xl font-bold mb-6 text-indigo-400">Krok 2/2: Čo Vás Baví?</h3>
+                <form onsubmit="handleRegisterStep2(event)">
+                    <p class="mb-4 text-gray-300">Vyberte žánre, ktoré najviac hrávate (viac možností):</p>
+                    <div class="space-y-3 mb-6">
+                        <!-- Checkboxy pre žánre -->
+                        <label class="flex items-center space-x-3 text-gray-300 hover:text-white cursor-pointer">
+                            <input type="checkbox" name="genre" value="FPS" class="h-4 w-4 text-emerald-600 rounded border-gray-600 bg-gray-700">
+                            <span>Strieľačky (FPS/TPS)</span>
+                        </label>
+                        <label class="flex items-center space-x-3 text-gray-300 hover:text-white cursor-pointer">
+                            <input type="checkbox" name="genre" value="RPG" class="h-4 w-4 text-emerald-600 rounded border-gray-600 bg-gray-700">
+                            <span>Role-Playing Hry (RPG)</span>
+                        </label>
+                        <label class="flex items-center space-x-3 text-gray-300 hover:text-white cursor-pointer">
+                            <input type="checkbox" name="genre" value="STRATEGY" class="h-4 w-4 text-emerald-600 rounded border-gray-600 bg-gray-700">
+                            <span>Stratégie</span>
+                        </label>
+                        <label class="flex items-center space-x-3 text-gray-300 hover:text-white cursor-pointer">
+                            <input type="checkbox" name="genre" value="CASUAL" class="h-4 w-4 text-emerald-600 rounded border-gray-600 bg-gray-700">
+                            <span>Casual / Logické</span>
+                        </label>
+                    </div>
+                    <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition duration-300">
+                        Dokončiť Registráciu
+                    </button>
+                </form>
+            </div>
+
+            <!-- 4. WELCOME SCREEN (Po registrácii) -->
+            <div id="welcome-view" class="auth-view text-center hidden">
+                <h3 class="text-4xl font-extrabold mb-6 text-emerald-400">Vitajte u nás!</h3>
+                <div class="loader mx-auto mb-6"></div>
+                <p class="text-xl text-gray-300">Pripravujeme Váš profil <span id="welcome-nickname"></span>...</p>
+                <p class="text-sm text-gray-500 mt-4">Za chvíľu Vás presmerujeme do obchodu.</p>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- MODAL PRE SLEDOVANIE SŤAHOVANIA -->
+    <div id="download-modal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden" onclick="toggleDownloadModal()">
+        <div class="bg-gray-800 rounded-xl shadow-2xl w-full max-w-xl mx-4 p-6 relative border border-emerald-700" onclick="event.stopPropagation()">
+            <button class="absolute top-4 right-4 text-gray-400 hover:text-white" onclick="toggleDownloadModal()">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            <h3 class="text-3xl font-bold mb-6 text-emerald-400">Prebiehajúce Sťahovanie (Simulácia)</h3>
+            
+            <div id="download-list" class="space-y-4 max-h-80 overflow-y-auto pr-2">
+                <!-- Miesto pre dynamické sťahované položky -->
+                <p id="no-downloads" class="text-gray-500 text-center py-6">Žiadne aktívne sťahovania.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- MODAL PRE ZOBRAZOVANIE SPRÁV (Náhrada za alert()) -->
+    <div id="message-modal-container" class="fixed inset-0 bg-black bg-opacity-70 z-[100] flex items-center justify-center opacity-0 pointer-events-none" onclick="hideMessage()">
+        <div id="message-modal-content" class="bg-gray-800 rounded-xl shadow-2xl w-full max-w-sm mx-4 p-6 relative border border-indigo-500 transform scale-95 transition-all duration-300" onclick="event.stopPropagation()">
+            <h4 id="message-title" class="text-2xl font-bold mb-3 text-indigo-400">Titulok</h4>
+            <p id="message-text" class="text-gray-300 mb-6"></p>
+            <button onclick="hideMessage()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg transition duration-300">
+                OK, rozumiem
+            </button>
+        </div>
+    </div>
+
+
+    <!-- JavaScript pre generovanie kariet, autentifikáciu a sťahovanie -->
+    <script>
+        // --- GLOBÁLNY STAV ---
+        let globalState = {
+            isLoggedIn: false,
+            userProfile: {
+                nickname: null,
+                skin: null,
+                genres: []
+            },
+            activeDownloads: [],
+        };
+        
+        // Definovanie dát pre zoznam hier (rovnaké ako predtým)
+        const gamesData = [
+            { title: "Call of Duty: Mobile", description: "Klasický FPS zážitok...", platform: "Android", size: "2.1 GB", downloadUrl: "CoD.apk", iconColor: "red" },
+            { title: "Genshin Impact", description: "Epické fantasy RPG...", platform: "iOS & Android", size: "20.5 GB", downloadUrl: "Genshin.zip", iconColor: "indigo" },
+            { title: "Clash Royale", description: "Strategická kartová hra...", platform: "iOS & Android", size: "250 MB", downloadUrl: "Clash.ipa", iconColor: "yellow" },
+            { title: "Subway Surfers", description: "Nekonečný bežec...", platform: "Android", size: "150 MB", downloadUrl: "Subway.apk", iconColor: "pink" },
+            { title: "Minecraft Pocket", description: "Tvorba a prieskum...", platform: "iOS", size: "500 MB", downloadUrl: "Minecraft.ipa", iconColor: "green" },
+            { title: "PUBG Mobile", description: "Battle Royale pre 100 hráčov...", platform: "Android", size: "1.8 GB", downloadUrl: "PUBG.apk", iconColor: "red" },
+            { title: "Asphalt 9: Legends", description: "Adrenalínové preteky...", platform: "iOS & Android", size: "3.5 GB", downloadUrl: "Asphalt.zip", iconColor: "indigo" },
+            { title: "Candy Crush Saga", description: "Legendárna logická hra...", platform: "Android", size: "120 MB", downloadUrl: "Candy.apk", iconColor: "yellow" }
+        ];
+
+        // --- NÁHRADA ZA ALERT() A CONFIRM() ---
+        
+        function showMessage(title, message, callback = null) {
+            const container = document.getElementById('message-modal-container');
+            const content = document.getElementById('message-modal-content');
+            document.getElementById('message-title').textContent = title;
+            document.getElementById('message-text').textContent = message;
+            
+            // Nastavenie callbacku pre tlačidlo OK
+            const okButton = content.querySelector('button');
+            okButton.onclick = () => {
+                hideMessage();
+                if (callback) callback();
+            };
+
+            container.classList.remove('opacity-0', 'pointer-events-none');
+            content.classList.remove('scale-95');
+        }
+
+        function hideMessage() {
+            const container = document.getElementById('message-modal-container');
+            const content = document.getElementById('message-modal-content');
+            content.classList.add('scale-95');
+            container.classList.add('opacity-0');
+            
+            setTimeout(() => {
+                container.classList.add('pointer-events-none');
+            }, 300);
+        }
+
+
+        // --- AUTHENTIFIKÁCIA A REGISTRÁCIA ---
+        
+        function handleLogout() {
+            globalState.isLoggedIn = false;
+            globalState.userProfile = { nickname: null, skin: null, genres: [] };
+            
+            // Vymazanie statusu prihlásenia z prehliadača
+            localStorage.removeItem('user_isLoggedIn'); 
+
+            updateAuthUI();
+            showMessage('Odhlásenie', 'Boli ste úspešne odhlásený.', null);
+        }
+
+        function updateAuthUI() {
+            const authBtn = document.getElementById('auth-btn');
+            const welcomeMsg = document.getElementById('welcome-message');
+
+            if (globalState.isLoggedIn) {
+                const skinClass = `skin-${globalState.userProfile.skin}`;
+                authBtn.className = `px-5 py-2 text-white font-bold rounded-full transition duration-300 uppercase shadow-lg border-2 ${skinClass} bg-gray-900`;
+                authBtn.textContent = `Odhlásiť sa (${globalState.userProfile.nickname})`;
+                authBtn.onclick = () => handleLogout(); // Nová funkcia pre odhlásenie
+
+                welcomeMsg.innerHTML = `Vitajte späť, **${globalState.userProfile.nickname}**! Váš ${globalState.userProfile.skin} skin je aktívny. Tu sú najlepšie hry pre vás.`;
+
+            } else {
+                authBtn.className = 'px-5 py-2 bg-indigo-600 text-white font-semibold rounded-full shadow-lg shadow-indigo-600/50 hover:bg-indigo-500 transition duration-300 transform hover:scale-105';
+                authBtn.textContent = 'Prihlásiť sa / Register';
+                authBtn.onclick = () => openAuthModal('login');
+                welcomeMsg.innerHTML = 'Najväčšia knižnica overených herných súborov pre **Android a iOS**. Sťahujte rýchlo a bezpečne s najnovšími verziami.';
+            }
+        }
+
+        function openAuthModal(viewName, event) {
+            if (event) event.preventDefault();
+            document.getElementById('auth-modal').classList.remove('hidden');
+            showAuthView(viewName);
+        }
+
+        function closeAuthModal() {
+            document.getElementById('auth-modal').classList.add('hidden');
+            document.getElementById('login-error').classList.add('hidden');
+            showAuthView('login'); // Reset na login
+        }
+
+        function showAuthView(id) {
+            document.querySelectorAll('.auth-view').forEach(view => view.classList.add('hidden'));
+            const targetElement = document.getElementById(id + '-view');
+            
+            if (targetElement) {
+                targetElement.classList.remove('hidden');
+            } else {
+                // Toto sa už nemalo stať po oprave, ale pre istotu
+                console.error(`Chyba: Nebol nájdený pohľad s ID: ${id}-view`);
+                showMessage('Chyba Aplikácie', 'Došlo k chybe pri prepínaní formulárov.');
+            }
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+            const nickname = document.getElementById('login-nickname').value.trim();
+            
+            if (localStorage.getItem('user_nickname') === nickname) {
+                // Skutočné prihlásenie po registrácii
+                globalState.isLoggedIn = true;
+                globalState.userProfile.nickname = nickname;
+                globalState.userProfile.skin = localStorage.getItem('user_skin');
+                globalState.userProfile.genres = JSON.parse(localStorage.getItem('user_genres') || '[]');
+                
+                // Uloženie statusu prihlásenia
+                localStorage.setItem('user_isLoggedIn', 'true'); 
+
+                closeAuthModal();
+                updateAuthUI();
+            }
+            else {
+                document.getElementById('login-error').textContent = `Užívateľ '${nickname}' nenájdený. Prosím, zaregistrujte sa, alebo zadajte správnu prezývku.`;
+                document.getElementById('login-error').classList.remove('hidden');
+            }
+        }
+
+        function handleRegisterStep1(event) {
+            event.preventDefault();
+            const nickname = document.getElementById('reg-nickname').value.trim();
+            const skinElement = document.querySelector('input[name="profile_skin"]:checked');
+            
+            if (nickname.length < 3 || !skinElement) {
+                showMessage('Chyba Registrácie', 'Prosím, zadajte prezývku (min. 3 znaky) a vyberte si 3D skin.');
+                return;
+            }
+
+            globalState.userProfile.nickname = nickname;
+            globalState.userProfile.skin = skinElement.value;
+
+            // Uloženie dát a prechod na krok 2
+            showAuthView('register-step2');
+        }
+
+        function handleRegisterStep2(event) {
+            event.preventDefault();
+            const genres = Array.from(document.querySelectorAll('input[name="genre"]:checked')).map(el => el.value);
+            globalState.userProfile.genres = genres;
+            
+            // Uloženie REGISTRAČNÝCH dát do prehliadača (persistence)
+            localStorage.setItem('user_nickname', globalState.userProfile.nickname);
+            localStorage.setItem('user_skin', globalState.userProfile.skin);
+            localStorage.setItem('user_genres', JSON.stringify(genres));
+            localStorage.setItem('user_isLoggedIn', 'true'); // Pri registrácii je automaticky prihlásený
+
+            // Zobrazenie Welcome Screen a animácie
+            document.getElementById('welcome-nickname').textContent = globalState.userProfile.nickname;
+            showAuthView('welcome');
+            
+            // Simulácia 2-sekundového načítania a automatické presmerovanie (zavretie modalu)
+            setTimeout(() => {
+                globalState.isLoggedIn = true;
+                closeAuthModal();
+                updateAuthUI();
+            }, 2000);
+        }
+
+        // Event listener pre 3D skiny na hover/klik (Zostáva nezmenený)
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('input[name="profile_skin"]').forEach(radio => {
+                const skinSpan = radio.nextElementSibling;
+                const skinClass = skinSpan.getAttribute('data-skin-class');
+                
+                // Zvýraznenie vybraného skinu
+                radio.addEventListener('change', () => {
+                    document.querySelectorAll('input[name="profile_skin"]').forEach(r => {
+                        r.nextElementSibling.classList.remove('ring-4', 'ring-offset-2', 'ring-offset-gray-800', r.nextElementSibling.getAttribute('data-skin-class'));
+                    });
+                    if (radio.checked) {
+                         skinSpan.classList.add('ring-4', 'ring-offset-2', 'ring-offset-gray-800', skinClass);
+                    }
+                });
+            });
+        });
+        
+        // --- SŤAHOVANIE A SLEDOVAČ ---
+
+        function updateDownloadTracker() {
+            const count = globalState.activeDownloads.length;
+            const tracker = document.getElementById('download-tracker');
+            const countSpan = document.getElementById('download-count');
+            
+            countSpan.textContent = count;
+            
+            if (count > 0) {
+                tracker.classList.remove('hidden');
+                tracker.classList.add('tracker-active');
+            } else {
+                tracker.classList.add('hidden');
+                tracker.classList.remove('tracker-active');
+                if (document.getElementById('download-modal').classList.contains('flex')) {
+                    document.getElementById('no-downloads').classList.remove('hidden');
+                }
+            }
+        }
+        
+        function toggleDownloadModal() {
+            const modal = document.getElementById('download-modal');
+            modal.classList.toggle('hidden');
+            modal.classList.toggle('flex');
+            
+            // Aktualizácia stavu No Downloads pri otvorení
+            document.getElementById('no-downloads').classList.toggle('hidden', globalState.activeDownloads.length > 0);
+        }
+
+        function startSimulatedDownload(game) {
+            if (!globalState.isLoggedIn) {
+                 showMessage('Chyba Sťahovania', 'Prosím, prihláste sa alebo sa zaregistrujte, aby ste mohli sťahovať hry.');
+                 openAuthModal('login');
+                 return;
+            }
+
+            const downloadId = Date.now();
+            const downloadItem = {
+                id: downloadId,
+                title: game.title,
+                size: game.size,
+                progress: 0,
+                status: 'Sťahuje sa...',
+                element: null // Bude držať HTML element pre aktualizáciu
+            };
+
+            globalState.activeDownloads.push(downloadItem);
+            updateDownloadTracker();
+            renderDownloadList();
+            
+            // --- Logika Simulovaného Sťahovania ---
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.floor(Math.random() * 15) + 5; // Rýchlejší priebeh
+                
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    downloadItem.progress = 100;
+                    downloadItem.status = 'Hotovo. Súbor otvorený.';
+                    
+                    // Odstránenie po 2 sekundách a notifikácia o presmerovaní
+                    setTimeout(() => {
+                        const index = globalState.activeDownloads.findIndex(d => d.id === downloadId);
+                        if (index !== -1) globalState.activeDownloads.splice(index, 1);
+                        updateDownloadTracker();
+                        renderDownloadList();
+                        
+                        // Simulované presmerovanie/dokončenie a návrat do shopu
+                        showMessage('Sťahovanie Dokončené', `Sťahovanie hry '${game.title}' je dokončené. Presúvate sa späť do obchodu.`, () => {
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        });
+
+                    }, 2000);
+
+                } else {
+                    downloadItem.progress = Math.min(progress, 100);
+                }
+                
+                // Aktualizácia UI
+                if (downloadItem.element) {
+                    downloadItem.element.querySelector('.progress-bar-fill').style.width = `${downloadItem.progress}%`;
+                    downloadItem.element.querySelector('.progress-text').textContent = `${downloadItem.progress}% - ${downloadItem.status}`;
+                }
+
+            }, 500); // Každých 0.5 sekundy
+        }
+
+        function renderDownloadList() {
+            const listContainer = document.getElementById('download-list');
+            listContainer.innerHTML = '';
+            
+            if (globalState.activeDownloads.length === 0) {
+                 listContainer.innerHTML = `<p id="no-downloads" class="text-gray-500 text-center py-6">Žiadne aktívne sťahovania.</p>`;
+                 return;
+            }
+
+            globalState.activeDownloads.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'bg-gray-700 p-4 rounded-lg shadow-md';
+                div.innerHTML = `
+                    <p class="font-bold text-white mb-2">${item.title} (${item.size})</p>
+                    <div class="relative pt-1">
+                        <div class="flex mb-2 items-center justify-between">
+                            <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-emerald-600 bg-emerald-200">
+                                Sťahovanie...
+                            </span>
+                            <span class="progress-text text-xs font-semibold inline-block text-emerald-400">
+                                ${item.progress}% - ${item.status}
+                            </span>
+                        </div>
+                        <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-gray-600">
+                            <div style="width:${item.progress}%" class="progress-bar-fill shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-emerald-500 transition-all duration-500"></div>
+                        </div>
+                    </div>
+                `;
+                item.element = div;
+                listContainer.appendChild(div);
+            });
+        }
+
+        // --- VYKRESLENIE KARIET ---
+
+        function createGameCard(game) {
+            return `
+                <div class="card-hover bg-gray-800 rounded-xl p-6 shadow-xl transition duration-300 border flex flex-col justify-between">
+                    <!-- Hlava Karty (Ikona a Názov) -->
+                    <div class="flex items-start space-x-4 mb-4">
+                        <!-- Vylepšený, dynamický kontajner pre ikonu -->
+                        <div class="w-14 h-14 flex-shrink-0 flex items-center justify-center bg-gray-900 rounded-xl text-white font-black text-2xl shadow-inner border border-${game.iconColor}-600/50">
+                            ${game.platform.includes('iOS') ? '📱' : '🎮'} 
+                        </div>
+                        <div>
+                            <h4 class="text-2xl font-bold text-white">${game.title}</h4>
+                            <p class="text-sm font-medium text-${game.iconColor}-400 mt-1">${game.platform}</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Popis a Detaily -->
+                    <p class="text-gray-400 text-base mb-5 flex-grow">${game.description}</p>
+                    
+                    <div class="flex justify-between items-center mb-5 border-t border-gray-700 pt-3">
+                        <span class="font-bold text-indigo-400 text-sm">VEĽKOSŤ SÚBORU:</span>
+                        <span class="text-lg font-extrabold text-emerald-400">${game.size}</span>
+                    </div>
+
+                    <!-- Tlačidlo Sťahovania s gradientom (teraz volá JS funkciu) -->
+                    <button onclick="startSimulatedDownload({title: '${game.title}', size: '${game.size}', downloadUrl: '${game.downloadUrl}'})"
+                       class="download-btn w-full py-3 text-center text-white font-bold rounded-full uppercase tracking-widest block">
+                        STIAHNUŤ
+                    </button>
+                    <p class="text-xs text-center text-gray-500 mt-2">Priamy link. Overené a bezpečné.</p>
+                </div>
+            `;
+        }
+
+        // --- INICIALIZÁCIA ---
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const gameGrid = document.getElementById('game-grid');
+            
+            // Vytvorenie kariet hier
+            const gameCardsHTML = gamesData.map(createGameCard).join('');
+            gameGrid.innerHTML = gameCardsHTML;
+
+            // Kontrola prehliadača pri štarte (persistence)
+            // Kontrolujeme, či existujú registračné dáta A status prihlásenia
+            const isRegistered = localStorage.getItem('user_nickname');
+            const isSessionActive = localStorage.getItem('user_isLoggedIn') === 'true';
+
+            if (isRegistered && isSessionActive) {
+                globalState.isLoggedIn = true;
+                globalState.userProfile.nickname = localStorage.getItem('user_nickname');
+                globalState.userProfile.skin = localStorage.getItem('user_skin');
+                globalState.userProfile.genres = JSON.parse(localStorage.getItem('user_genres') || '[]');
+            }
+            updateAuthUI();
+        });
+    </script>
+</body>
+</html>
