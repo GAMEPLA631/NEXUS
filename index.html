@@ -295,8 +295,8 @@
         // --- KONŠTANTY PRE SIMULÁCIU ---
         
         // Rýchlosti sťahovania v MB/s
-        const DESKTOP_SPEED = 2.0; // Pomalšia rýchlosť pre PC (napr. stará DSL)
-        const MOBILE_SPEED = 8.0;  // Rýchlejšia rýchlosť pre mobil (napr. 4G/5G)
+        const DESKTOP_SPEED = 10.0; // PC/Desktop: 10.0 MB/s
+        const MOBILE_SPEED = 15.0;  // Mobilné zariadenia: 15.0 MB/s
         const UPDATE_INTERVAL_MS = 500;
         let SIMULATED_SPEED_MB_PER_SECOND = DESKTOP_SPEED; // Predvolená rýchlosť
         
@@ -718,7 +718,7 @@
                 const div = document.createElement('div');
                 div.className = 'bg-gray-700 p-4 rounded-lg shadow-md';
                 
-                const speedDisplay = isMobileDevice() ? 'Mobilná Sieť' : 'PC/Kábel';
+                const speedDisplay = item.platform.includes('PC') ? 'PC/Kábel' : 'Mobilná Sieť';
 
                 div.innerHTML = `
                     <p class="font-bold text-white mb-2">${item.title}</p>
