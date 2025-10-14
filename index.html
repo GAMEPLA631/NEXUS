@@ -377,9 +377,10 @@
         const GB_TO_BYTES = 1073741824; // 1 GB = 1024 * 1024 * 1024 bytes
         
         // Rýchlosti v MB/s (dynamické nastavenie pre simuláciu)
+        // AKTUALIZOVANÉ PODĽA POŽIADAVKY UŽÍVATEĽA
         const DOWNLOAD_SPEEDS = {
-            MOBILE: { MIN: 35, MAX: 50 }, 
-            PC: { MIN: 18, MAX: 28 }     
+            MOBILE: { MIN: 150, MAX: 196.33 }, 
+            PC: { MIN: 15, MAX: 23.30 }     
         };
         
         const gamesData = [
@@ -954,6 +955,7 @@
     </script>
 </body>
 </html>
+
 
 
 
